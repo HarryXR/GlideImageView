@@ -5,6 +5,7 @@ package com.harry.glideimageview.view;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapShader;
@@ -43,7 +44,8 @@ public class GlideImageView extends ImageView {
     private final RectF mBorderRect = new RectF();
     private RequestManager manager;
     private DrawableTypeRequest builder;
-    private CircleTransform mRoundTrans;
+    private RoundTransform mRoundTrans;
+    private CircleTransform mCircleTrans;
 
     public GlideImageView(Context context) {
         super(context);
@@ -64,7 +66,7 @@ public class GlideImageView extends ImageView {
             return;
         }
         manager = Glide.with(context);
-        mRoundTrans = new CircleTransform(context);
+        mCircleTrans = new CircleTransform(context);
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.GlideImageView);
         try {
             placeholderId = a.getResourceId(R.styleable.GlideImageView_placeholderImage, placeholderId);
@@ -77,6 +79,7 @@ public class GlideImageView extends ImageView {
         } finally {
             a.recycle();
         }
+        mRoundTrans = new RoundTransform(context);
         mBorderPaint.setStyle(Paint.Style.STROKE);
         mBorderPaint.setAntiAlias(true);
         mBorderPaint.setColor(mBorderColor);
@@ -87,9 +90,11 @@ public class GlideImageView extends ImageView {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         mBorderRect.set(0, 0, getWidth(), getHeight());
-        if (mBorderWidth != 0) {
-            canvas.drawCircle(getWidth() / 2.0f, getHeight() / 2.0f, Math.min((mBorderRect.height() - mBorderWidth) / 2.0f, (mBorderRect.width() - mBorderWidth) / 2.0f), mBorderPaint);
-    }
+        if (roundAsCircle && mBorderWidth != 0) {
+            canvas.drawCircle(getWidth() / 2.0f, getHeight() / 2.0f, Math.min(
+                    (mBorderRect.height() - mBorderWidth) / 2.0f, (mBorderRect.width() - mBorderWidth) / 2.0f),
+                mBorderPaint);
+        }
     }
 
     /**
@@ -113,9 +118,13 @@ public class GlideImageView extends ImageView {
         if (failureImageId > 0) {
             builder.error(failureImageId);
         }
-        if (roundAsCircle) {
+        if (roundedCornerRadius > 0) {
             builder.transform(mRoundTrans);
         }
+        if (roundAsCircle) {
+            builder.transform(mCircleTrans);
+        }
+        builder.animate(R.anim.slide_in_left);
     }
 
     //圆形
@@ -145,13 +154,56 @@ public class GlideImageView extends ImageView {
             if (result == null) {
                 result = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
             }
-
             Canvas canvas = new Canvas(result);
             Paint paint = new Paint();
-            paint.setShader(new BitmapShader(squared, BitmapShader.TileMode.CLAMP, BitmapShader.TileMode.CLAMP));
+            paint.setShader(new BitmapShader(source, BitmapShader.TileMode.CLAMP, BitmapShader.TileMode.CLAMP));
             paint.setAntiAlias(true);
             float r = size / 2f;
             canvas.drawCircle(r, r, r, paint);
+            return result;
+        }
+
+        @Override
+        public String getId() {
+            return getClass().getName();
+        }
+    }
+
+    //圆角
+    public class RoundTransform extends BitmapTransformation {
+
+        private float radius = 0f;
+
+        public RoundTransform(Context context) {
+            this(context, roundedCornerRadius);
+        }
+
+        public RoundTransform(Context context, int dp) {
+            super(context);
+            this.radius = Resources.getSystem().getDisplayMetrics().density * dp;
+        }
+
+        @Override
+        protected Bitmap transform(BitmapPool pool, Bitmap toTransform, int outWidth, int outHeight) {
+            return roundCrop(pool, toTransform);
+        }
+
+        private Bitmap roundCrop(BitmapPool pool, Bitmap source) {
+            if (source == null) {
+                return null;
+            }
+
+            Bitmap result = pool.get(source.getWidth(), source.getHeight(), Bitmap.Config.ARGB_8888);
+            if (result == null) {
+                result = Bitmap.createBitmap(source.getWidth(), source.getHeight(), Bitmap.Config.ARGB_8888);
+            }
+
+            Canvas canvas = new Canvas(result);
+            Paint paint = new Paint();
+            paint.setShader(new BitmapShader(source, BitmapShader.TileMode.CLAMP, BitmapShader.TileMode.CLAMP));
+            paint.setAntiAlias(true);
+            RectF rectF = new RectF(0f, 0f, source.getWidth(), source.getHeight());
+            canvas.drawRoundRect(rectF, radius, radius, paint);
             return result;
         }
 

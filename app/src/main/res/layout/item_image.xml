@@ -27,14 +27,12 @@
 
         <com.harry.glideimageview.view.GlideImageView
             android:id="@+id/ivImage"
-            android:layout_width="145dp"
-            android:layout_height="145dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:scaleType="centerCrop"
             glide:placeholderImage="@mipmap/ic_launcher"
             glide:roundedCornerRadius="4dp"
-            glide:roundAsCircle="true"
-            glide:roundingBorderWidth="2dp"
-            glide:roundingBorderColor="@color/accent"/>
+            glide:roundAsCircle="true"/>
 
     </LinearLayout>
 
