@@ -5,5 +5,8 @@
         <attr name="failureImage" format="reference"/>
         <attr name="roundAsCircle" format="boolean"/>
         <attr name="roundedCornerRadius" format="dimension"/>
+        <attr name="roundingBorderWidth" format="dimension"/>
+        <!-- Rounding border color -->
+        <attr name="roundingBorderColor" format="color"/>
     </declare-styleable>
 </resources>
